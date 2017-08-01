@@ -27,10 +27,10 @@ int wer(char *lab, char *res, double &match)
 
 	int len1,len2;
 
-	char lab_tmp[MAX_LCS_STR_LEN * 2] = {0};
-	snprintf(lab_tmp, MAX_LCS_STR_LEN*2, "%s", lab);
-	char res_tmp[MAX_LCS_STR_LEN * 2] = {0};
-	snprintf(res_tmp, MAX_LCS_STR_LEN*2, "%s", res);
+	char lab_tmp[MAN_LEN * 2] = {0};
+	snprintf(lab_tmp, MAN_LEN*2, "%s", lab);
+	char res_tmp[MAN_LEN * 2] = {0};
+	snprintf(res_tmp, MAN_LEN*2, "%s", res);
 
 	convert_to_ArabicNumbers(lab_tmp);	
 	convert_to_ArabicNumbers(res_tmp);
@@ -49,7 +49,7 @@ int wer(char *lab, char *res, double &match)
 	return 0;
 }
 
-int ch(char *st)
+int ch(const char *st)
 {
 	int ret=int(st[0])*256+st[1];
 	//printf("%d\n",ret);
@@ -62,169 +62,193 @@ int ch(char *st)
  *  则字符串一称之为字符串二的子串。
  *  注意，并不要求子串（字符串一）的字符必须连续出现在字符串二中。
  *      a1b2c3d4 与 hm12mm3yy4     最长公共子串  1234
- * @string1 : 输入串1 (识别结果) 
- * @string2 : 输入串2 (标注结果) 
+ * @fc1 : 输入串1 (识别结果) 
+ * @fc2 : 输入串2 (标注结果) 
  * @len1: 输入串1的长度（返回真实的字个数）
  * @len2: 输入串2的长度（返回） 
  * @return : LCS长度 
  */
 
 
-double lcs_string(const char *string1, char *string2, int &len1, int &len2)
+double lcs_string(const char *fc1, const char *fc2, int &len1, int &len2)
 {
 
-	int sz1 = strlen(string1);
-	int sz2 = strlen(string2);
-	// double lcs_ff[MAX_LCS_STR_LEN][MAX_LCS_STR_LEN]={0};
+	int cv1 = strlen(fc1);
+	int cv2 = strlen(fc2);
+
     // 开辟存储空间 
-	double **lcs_ff= new double*[MAX_LCS_STR_LEN];
-	for(int ii=0; ii<MAX_LCS_STR_LEN; ii++)
+	double **lcs_ff= new double*[MAN_LEN];
+	for(int ii=0; ii<MAN_LEN; ii++)
 	{
-		lcs_ff[ii] = new double[MAX_LCS_STR_LEN];
-		for(int jj=0; jj<MAX_LCS_STR_LEN; jj++)
+		lcs_ff[ii] = new double[MAN_LEN];
+		for(int jj=0; jj<MAN_LEN; jj++)
 		{
 			lcs_ff[ii][jj]=0;
 		}
 	}
+
+    // 对应lcs_ff 记录当前最优值 来自于哪里(-1 0 1 )(插入 替换 删除)
+	int **lcs_cc= new int*[MAN_LEN];
+	for(int ii=0; ii<MAN_LEN; ii++)
+	{
+		lcs_cc[ii] = new int[MAN_LEN];
+		for(int jj=0; jj<MAN_LEN; jj++)
+		{
+			lcs_cc[ii][jj]=-2;
+		}
+	}
 	
-    // 存储最终需要计算的真正字符串 
-	short fc1[MAX_LCS_STR_LEN];
-	int cv1=0;
-	for (int ct0=0; ct0<sz1; ct0++)
-	{
-        // 中文字符 
-		if ((unsigned char)string1[ct0] >= 0x80)
-		{
-			int value=(int)string1[ct0]*256+string1[ct0+1];
-			//printf("%c%c\t%d\n",string1[ct0],string1[ct0+1],value);
-			ct0++;
-
-            // 标点等 不计算的符号 
-			if (fr.find(value)!=fr.end())
-			{
-				continue;
-			}
-            // 全角字母等 需要转换的符号
-			if (c_conv.find(value) != c_conv.end())
-			{
-				value=c_conv[value];
-			}
-			fc1[cv1]=value;
-		}
-		else // 单字节的英文等 abc
-		{
-            // 忽略
-			if ((string1[ct0]<48) ||
-					(string1[ct0]>=58 && string1[ct0]<65) ||
-					(string1[ct0]>=91 && string1[ct0]<97))
-			{
-				continue;
-			}
-			fc1[cv1]=string1[ct0];
-		}
-		cv1++;
-	}
-
-	short fc2[MAX_LCS_STR_LEN];
-	int cv2=0;
-	for (int ct0=0; ct0<sz2; ct0++)
-	{
-		if ((unsigned char)string2[ct0]>=0x80)
-		{
-			int value=(int)string2[ct0]*256+string2[ct0+1];
-			//printf("%c%c\t%d\n",string2[ct0],string2[ct0+1],value);
-			ct0++;
-			if (fr.find(value)!=fr.end())
-			{
-				continue;
-			}
-			if (c_conv.find(value)!=c_conv.end())
-			{
-				value=c_conv[value];
-			}
-			fc2[cv2]=value;
-		}
-		else
-		{
-			if ((string2[ct0]<48) ||
-					(string2[ct0]>=58 && string2[ct0]<65) ||
-					(string2[ct0]>=91 && string2[ct0]<97))
-			{
-				continue;
-			}
-			fc2[cv2]=string2[ct0];
-		}
-		cv2++;
-	}
 
     // 第1行 第1列 初始化为0
     //str1 构成 竖列 1:cv1
 	for (int ct0=1;ct0<=cv1;ct0++)
 	{
 		lcs_ff[ct0][0]=ct0;
+        // 删除  
+        lcs_cc[ct0][0] = 1;
 	}
     // str2 构成 横列 1:cv2
 	for (int ct1=1;ct1<=cv2;ct1++)
 	{
 		lcs_ff[0][ct1]=ct1;
+        // 插入  
+		lcs_cc[0][ct1]=-1;
 	}
 
     // 动态规划 计算过程
     // 取 小的那个值  最好都是0
+    int err_insert = 0;
+    int err_delete = 0;
+    int err_replace = 0;
+    int flag = 0;
 	for (int ct0=1;ct0<=cv1;ct0++)
 	{
-		for (int ct1=1;ct1<=cv2;ct1++)
+		for (int ct1=1; ct1<=cv2; ct1++)
 		{
             // 不相等1 相等0
-			double cur_judge    = (fc1[ct0-1] != fc2[ct1-1]);
+			double cur_judge = 0;
+            if(fc1[ct0-1] != fc2[ct1-1])
+              cur_judge = 1;
+            // 替换 
+			double mm = lcs_ff[ct0-1][ct1-1] + cur_judge;
+            // 删除:  
+			double mm0       = lcs_ff[ct0-1][ct1] + 1;
+            // 插入:  
+			double mm1        = lcs_ff[ct0][ct1-1] + 1;
 
-            // min_ov 为两者较小的 
-			double min_ov       = lcs_ff[ct0-1][ct1]+1;
-			double cur_v        = lcs_ff[ct0][ct1-1]+1;
-			if (cur_v<min_ov)
-			{
-				min_ov=cur_v;
-			}
+            if(mm<mm0 && mm<mm1)
+            {
+                // 替换:    str1和str2都增加一个
+                lcs_cc[ct0][ct1] = 0;
+			    lcs_ff[ct0][ct1] = mm;
+            }
+            else if (mm1<mm && mm1 < mm0)
+            {
+                // 插入
+                lcs_cc[ct0][ct1] = -1;
+			    lcs_ff[ct0][ct1] = mm1;
+            }
+            else
+            {
+                // 删除 
+                lcs_cc[ct0][ct1] = 1;
+			    lcs_ff[ct0][ct1] = mm0;
+            }
 
-            // 如果它 更小  那么取这个 
-			cur_v = lcs_ff[ct0-1][ct1-1] + cur_judge;
-			if (cur_v<min_ov)
-			{
-				min_ov = cur_v;
-			}
-			lcs_ff[ct0][ct1] = min_ov;
 		}
 	}
 
     // 测试 
 
-	printf("   0 ");
-    for(int ii= 0 ; ii< strlen(string2);ii++)
-    {
-	    printf("%c  ",string2[ii]);
-    }
-	printf("\n");
 
-    for (int ct0=0;ct0<=cv1;ct0++)
+    printf("输出 lcs_ff 矩阵:\n");
+    for (int ct0=0; ct0<=cv1; ct0++)
 	{
-        if(ct0 == 0)
-		    printf("0 ");
-        else
-		    printf("%c ",string1[ct0-1]);
-
-		for (int ct1=0;ct1<=cv2;ct1++)
+		for (int ct1=0; ct1<=cv2;ct1++)
 		{
 			printf("%02d ",int(lcs_ff[ct0][ct1]));
 		}
 		printf("\n");
 	}
 
+    // lcs_cc 矩阵 
+	printf("输出lcs_cc矩阵\n");
+    for (int ct0=0;ct0<=cv1;ct0++)
+	{
+		for (int ct1=0;ct1<=cv2;ct1++)
+		{
+			printf("%02d ",int(lcs_cc[ct0][ct1]));
+		}
+		printf("\n");
+	}
+
+    std::vector<int> vec_1;
+    std::vector<int> vec_2;
+	printf("最优路径回溯\n");
+    int ii=cv1;
+    int jj=cv2; 
+    while(ii != 0 && jj != 0)
+    {
+        int vv = lcs_cc[ii][jj];
+        printf("[%d,%d]=%d\n", ii, jj, vv);
+        vec_1.insert(vec_1.begin(),ii);
+        vec_2.insert(vec_2.begin(),jj);
+        if(vv == 0)
+        {
+            if(ii>1 && jj>1 && lcs_ff[ii-1][jj-1] == lcs_ff[ii-2][jj-2] + 1)
+            {
+                err_replace++;
+            }
+            ii--;
+            jj--;
+        }
+        else if(vv == -1)
+        {
+            jj--;
+            err_insert++;
+        }
+        else if(vv == 1)
+        {
+            ii--;
+            err_delete++;
+        }
+    }
+
+    printf("对齐展示:\n");
+    for(int ii=0; ii<vec_1.size(); ii++)
+    {
+        if(ii>0 && vec_1[ii] == vec_1[ii-1])
+        {
+            printf("  ");
+        }
+        else
+        {
+            printf(" %c",fc1[vec_1[ii]-1]);
+        }
+    }
+    printf("\n");
+    for(int ii=0; ii<vec_2.size(); ii++)
+    {
+        if(ii>0 && vec_2[ii] == vec_2[ii-1])
+        {
+            printf("  ");
+        }
+        else
+        {
+            printf(" %c",fc2[vec_2[ii]-1]);
+        }
+    }
+    printf("\n");
+
+
+	printf("insert=%d\tdelete=%d\treplace=%d\n",err_insert, err_delete, err_replace);
+
     // 错误个数 
 	double final_lcs = lcs_ff[cv1][cv2];
 	len1=cv1;
 	len2=cv2;
 
-	for(int jj=0; jj<MAX_LCS_STR_LEN; jj++)
+	for(int jj=0; jj<MAN_LEN; jj++)
 	{
 		delete [] lcs_ff[jj];
 	}
@@ -327,7 +351,7 @@ int replace(char chString[], const char chOldWord[], const char chNewWord[])
  * @return -1 归一化失败
  * @return 0 归一化成功
  **/
-static int convert_to_ArabicNumbers(char *src)
+int convert_to_ArabicNumbers(char *src)
 { 
 	//替换列表
 	const char  *numberlist[]={"1","2","3","4","5","6","7", \
