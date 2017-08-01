@@ -10,6 +10,7 @@ name=wer
 GCC=g++
 
 obj = \
+	UTF8Util.o \
 	werC.o \
 	main.o
 

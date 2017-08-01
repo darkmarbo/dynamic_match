@@ -69,10 +69,251 @@ int ch(const char *st)
  * @return : LCS长度 
  */
 
+double lcs_string(const char *str1, const char *str2, int &len1, int &len2)
+{
+    // UTF8
+    // 得到 str的长度  
+	// len  = UTF8Util::StrCharLength(str.c_str());
+    // 获取 str 前面 len 个字
+	// string temp_word = UTF8Util::NextNChars(str.c_str(), len);
+		
+    // 删除 str 前面 len 个字  并且把剩余字符串更新到 str中 
+    // str = UTF8Util::SkipNChars(str.c_str(),len);
 
+    // 从 str 末尾取 len 个字 
+	//string temp_word = UTF8Util::PrevNChars(segStr.c_str()+strlen(segStr.c_str()), len);
+    
+    // 特别注意 矩阵的index和fc1 fc2 有一个ii-1的关系 
+
+
+
+    std::string fc1 = str1;
+    std::string fc2 = str2;
+    // 两个字符串  字 的个数 
+	int cv1 = UTF8Util::StrCharLength(fc1.c_str());
+	int cv2 = UTF8Util::StrCharLength(fc2.c_str());
+
+    // 开辟存储空间 
+	double **lcs_ff= new double*[MAN_LEN];
+	for(int ii=0; ii<MAN_LEN; ii++)
+	{
+		lcs_ff[ii] = new double[MAN_LEN];
+		for(int jj=0; jj<MAN_LEN; jj++)
+		{
+			lcs_ff[ii][jj]=0;
+		}
+	}
+
+    // 对应lcs_ff 记录当前最优值 来自于哪里(-1 0 1 )(插入 替换 删除)
+	int **lcs_cc= new int*[MAN_LEN];
+	for(int ii=0; ii<MAN_LEN; ii++)
+	{
+		lcs_cc[ii] = new int[MAN_LEN];
+		for(int jj=0; jj<MAN_LEN; jj++)
+		{
+			lcs_cc[ii][jj]=-2;
+		}
+	}
+	
+
+    // 第1行 第1列 初始化为0
+    //str1 构成 竖列 1:cv1
+	for (int ct0=1; ct0<=cv1; ct0++)
+	{
+		lcs_ff[ct0][0]=ct0;
+        // 删除  
+        lcs_cc[ct0][0] = 1;
+	}
+    // str2 构成 横列 1:cv2
+	for (int ct1=1;ct1<=cv2;ct1++)
+	{
+		lcs_ff[0][ct1]=ct1;
+        // 插入  
+		lcs_cc[0][ct1]=-1;
+	}
+
+    // 动态规划 计算过程
+    // 取 小的那个值  最好都是0
+    int err_insert = 0;
+    int err_delete = 0;
+    int err_replace = 0;
+    int flag = 0;
+	for (int ct0=1;ct0<=cv1;ct0++)
+	{
+		for (int ct1=1; ct1<=cv2; ct1++)
+		{
+            // 不相等1 相等0
+            // 获取 fc1 的第ct0 个字 
+            string tmp_fc1 = UTF8Util::GetChar(fc1, ct0);
+            string tmp_fc2 = UTF8Util::GetChar(fc2, ct1);
+
+			double cur_judge = 1;
+            if(tmp_fc1.compare(tmp_fc2) == 0)
+            {
+                // printf("mmmm=%s",tmp_fc1.c_str());
+                cur_judge = 0;
+            }
+            // 替换 
+			double mm = lcs_ff[ct0-1][ct1-1] + cur_judge;
+            // 删除:  
+			double mm0       = lcs_ff[ct0-1][ct1] + 1;
+            // 插入:  
+			double mm1        = lcs_ff[ct0][ct1-1] + 1;
+
+            if(mm <= mm0 && mm <= mm1)
+            {
+                // 替换:    str1和str2都增加一个
+                lcs_cc[ct0][ct1] = 0;
+			    lcs_ff[ct0][ct1] = mm;
+            }
+            else if (mm1 <= mm && mm1 <= mm0)
+            {
+                // 插入
+                lcs_cc[ct0][ct1] = -1;
+			    lcs_ff[ct0][ct1] = mm1;
+            }
+            else
+            {
+                // 删除 
+                lcs_cc[ct0][ct1] = 1;
+			    lcs_ff[ct0][ct1] = mm0;
+            }
+
+		}
+	}
+
+    // 测试 
+
+
+    printf("输出 lcs_ff 矩阵:\n");
+    for (int ct0=0; ct0<=cv1; ct0++)
+	{
+		for (int ct1=0; ct1<=cv2;ct1++)
+		{
+			printf("%02d ",int(lcs_ff[ct0][ct1]));
+		}
+		printf("\n");
+	}
+
+	printf("输出lcs_cc矩阵\n");
+    for (int ct0=0;ct0<=cv1;ct0++)
+	{
+		for (int ct1=0;ct1<=cv2;ct1++)
+		{
+			printf("%02d ",int(lcs_cc[ct0][ct1]));
+		}
+		printf("\n");
+	}
+
+    std::vector<int> vec_1;
+    std::vector<int> vec_2;
+	printf("最优路径回溯\n");
+    int ii=cv1;
+    int jj=cv2; 
+    while(ii != 0 && jj != 0)
+    {
+        int vv = lcs_cc[ii][jj];
+        printf("[%d,%d]=%d\n", ii, jj, vv);
+        vec_1.insert(vec_1.begin(),ii);
+        vec_2.insert(vec_2.begin(),jj);
+        if(vv == 0)
+        {
+            if(ii>1 && jj>1 && lcs_ff[ii-1][jj-1] == lcs_ff[ii-2][jj-2] + 1)
+            {
+                err_replace++;
+            }
+            ii--;
+            jj--;
+        }
+        else if(vv == -1)
+        {
+            jj--;
+            err_insert++;
+        }
+        else if(vv == 1)
+        {
+            ii--;
+            err_delete++;
+        }
+    }
+
+    printf("对齐展示:\n");
+    for(int ii=0; ii<vec_1.size(); ii++)
+    {
+        if(ii<vec_1.size() -1 && vec_1[ii+1] == vec_1[ii])
+        {
+            printf(" \t");
+        }
+        else
+        {
+            // fc1 的第 vec_1[ii] 个字 
+            string tmp = UTF8Util::GetChar(fc1, vec_1[ii]);
+            printf("%s\t",tmp.c_str());
+        }
+    }
+    printf("\n");
+    for(int ii=0; ii<vec_2.size(); ii++)
+    {
+        if(ii>0 && vec_2[ii] == vec_2[ii-1])
+        {
+            printf(" \t");
+        }
+        else
+        {
+            // fc2 的第 vec_2[ii] 个字 
+            string tmp = UTF8Util::GetChar(fc2, vec_2[ii]);
+            printf("%s\t", tmp.c_str());
+        }
+    }
+    printf("\n");
+
+
+	printf("insert=%d\tdelete=%d\treplace=%d\n",err_insert, err_delete, err_replace);
+
+    // 错误个数 
+	double final_lcs = lcs_ff[cv1][cv2];
+	len1=cv1;
+	len2=cv2;
+
+	for(int jj=0; jj<MAN_LEN; jj++)
+	{
+		delete [] lcs_ff[jj];
+	}
+	delete []lcs_ff;
+
+	return final_lcs;
+}
+
+/**
+ * @brief 求两个串的LCS长度 
+ *  如果字符串一的所有字符按其在字符串中的顺序出现在另外一个字符串二中，
+ *  则字符串一称之为字符串二的子串。
+ *  注意，并不要求子串（字符串一）的字符必须连续出现在字符串二中。
+ *      a1b2c3d4 与 hm12mm3yy4     最长公共子串  1234
+ * @fc1 : 输入串1 (识别结果) 
+ * @fc2 : 输入串2 (标注结果) 
+ * @len1: 输入串1的长度（返回真实的字个数）
+ * @len2: 输入串2的长度（返回） 
+ * @return : LCS长度 
+ */
+
+/*
 double lcs_string(const char *fc1, const char *fc2, int &len1, int &len2)
 {
+    // UTF8
+    // 得到 str的长度  
+	// len  = UTF8Util::StrCharLength(str.c_str());
+    // 获取 str 前面 len 个字
+	// string temp_word = UTF8Util::NextNChars(str.c_str(), len);
+		
+    // 删除 str 前面 len 个字  并且把剩余字符串更新到 str中 
+    // str = UTF8Util::SkipNChars(str.c_str(),len);
 
+    // 从 str 末尾取 len 个字 
+	//string temp_word = UTF8Util::PrevNChars(segStr.c_str()+strlen(segStr.c_str()), len);
+    
+    
+    // 特别注意 矩阵的index和fc1 fc2 有一个ii-1的关系 
 	int cv1 = strlen(fc1);
 	int cv2 = strlen(fc2);
 
@@ -256,6 +497,7 @@ double lcs_string(const char *fc1, const char *fc2, int &len1, int &len2)
 
 	return final_lcs;
 }
+*/
 
 /**
  * @brief: 将字符串1中所有与字符串2相同的子串替换成字符串3 

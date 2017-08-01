@@ -5,8 +5,20 @@
 * @ingroup opencc_cpp_api
 */
 
-#include "stdafx.h"
 #include <string.h>
+#include <stdio.h>
+//#include <tchar.h>
+#include <string>
+#include <iostream>
+#include <vector>
+//#include <conio.h>
+#include <sstream>
+#include <fstream>
+
+//#define StringW vector<wchar_t>;
+//#define StringA vector<char>;
+
+using namespace std;
 
 class UTF8Util
 {
@@ -19,6 +31,24 @@ public:
 	* Detect UTF8 BOM and skip it.
 	*/
 	static void SkipUtf8Bom(FILE* fp);
+
+    /*
+     *  第x个元素 x = 1, 2, 3
+     * */
+    static string GetChar(string str, int x)
+    {
+        string tmp;
+        if(1 == x)
+        {
+          tmp = UTF8Util::NextNChars(str.c_str(), 1);
+        }
+        else
+        {
+            tmp = UTF8Util::SkipNChars(str.c_str(), x-1);
+            tmp = UTF8Util::NextNChars(tmp.c_str(), 1);
+        }
+        return tmp;
+    }
 
 	/**
 	* Return the length of the str

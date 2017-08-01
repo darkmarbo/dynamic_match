@@ -9,6 +9,8 @@
 #include <cstring>
 #include <stdio.h>
 
+#include "UTF8Util.h"
+
 using namespace std;
 
 
