@@ -15,9 +15,26 @@ using namespace std;
 
 
 
-#define MAN_LEN 500
+#define MAX_LEN 500
+
+typedef struct _WER_RES{
+    int len_lab;
+    int len_res;
+
+    int err_ins;
+    int err_del;
+    int err_rep;
+    int err_all;
+
+    char str_lab[MAX_LEN]; // 对齐的lab 
+    char str_res[MAX_LEN]; // 对齐的res 
+}WER_RES;
 
 int ch(const char *st);
+
+int add_wer(WER_RES &wer_all, WER_RES wer_res);
+
+int lcs_string(const char *string1, const char *string2, WER_RES &wer_res);
 
 double lcs_string(const char *string1, const char *string2, int &len1, int &len2);
 
@@ -25,6 +42,6 @@ int replace(char chString[], const char chOldWord[], const char chNewWord[]);
 
 int convert_to_ArabicNumbers(char *src);
 
-int wer(char *lab, char *res, double &match);
+int wer(const char *lab, const char *res, double &match);
 
 #endif

@@ -1,2 +1,10 @@
-000001  一二三四五六七八九十
-000002  十九八七六五四三二一
+id=000001
+lab=一二三四五六七八九十
+res=一二散四六七八呵呵九十
+len_lab=10 len_res=11 err_ins=2 err_del=1 err_rep=1 wer=0.4000
+id=000002
+lab=十九八七六五四三二一
+res=十九mmm八七五四三二一
+len_lab=10 len_res=12 err_ins=3 err_del=1 err_rep=0 wer=0.4000
+===========================================================
+len_lab=20 len_res=23 err_ins=5 err_del=2 err_rep=1 wer=0.4000
