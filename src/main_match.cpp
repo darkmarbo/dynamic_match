@@ -12,10 +12,21 @@ typedef struct _Text{
 
 // 从哪个小语音ii开始 到那个jj(包含)结束  匹配度是多少
 typedef struct _MATCH{
+    // 开始小语音的idx=0
     int st;
+    // 结束小语音的idx(包含)
     int end;
     double match;
 }MATCH;
+
+// 动态规划中的 结点 
+// 存储 lab的当前Mi结点  匹配上res中第j个小句子Nj 时 的总路径得分  
+//   
+typedef struct _SCORE{
+    // 上一层M[i-1]结点的位置: 对应的j的值
+    int last_j;
+    double score;
+}SCORE;
 
 vector<Text> vec_lab;
 vector<Text> vec_res;
@@ -56,17 +67,21 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    printf("载入label和res文件到vector...");
     ret = file2vec(fp_lab, vec_lab);
     ret = file2vec(fp_res, vec_res);
     M = vec_lab.size();
     N = vec_res.size();
 
     vector< vector<MATCH> > vec_match(M, vector<MATCH>(N));
+    vector< vector<SCORE> > vec_score(M, vector<SCORE>(N));
 
     // 计算 res 中所有数据的wer  
     WER_RES wer_all;
     memset(&wer_all, 0, sizeof(wer_all));
-    printf("总计 %d 个lab \n", M);
+    printf("开始计算每句话和所有小语音的基础匹配度... \n", M);
+
+    // lab的每句话  跟res的每个小句子  对比计算match 保存到矩阵  
     for(int idx=0; idx < M; idx++)
     {
         printf("当前 %d 个lab \n", idx+1);
@@ -78,7 +93,7 @@ int main(int argc, char *argv[])
         // 与 res 中每个小句子 进行匹配 
         for(int ii = 0; ii<N; ii++)
         {
-            double wer_tmp = 0.0;
+            double wer_tmp = -10.0;
             int jj_tmp = ii;  // 记录拼接到jj的最好
             string text_tmp;  // 记录拼接最好的结果 
 
@@ -126,14 +141,19 @@ int main(int argc, char *argv[])
     }
 
 
-    //// 测试 vec_match
-    for(int ii=0; ii<M;ii++)
+    // 通过 vec_match 计算vec_score 
+    //// 测试 vec_match   打印出每句话 单独 对应的最佳匹配点 
+    printf("开始计算动态规划中每个句子的截止得分...");
+    for(int ii=0; ii<M; ii++)
     {
+        printf("当前 %d ...\n");
         fprintf(fp_out, "%s\t%s\n", vec_lab[ii].id.c_str(), vec_lab[ii].text.c_str());
         int jj_ok = 0;
         MATCH mt_ok;
-        mt_ok.match = 0.0;
-        for(int jj=1; jj<N; jj++)
+        mt_ok.match = -10.0;
+
+        // 当前 节点  [ii,jj]
+        for(int jj=0; jj<N; jj++)
         {
             MATCH mt = vec_match[ii][jj];
             //fprintf(fp_out, "\t%d\t%d\t%.4f\n", mt.st, mt.end, mt.match);
@@ -142,9 +162,94 @@ int main(int argc, char *argv[])
                 jj_ok = jj;
                 mt_ok = mt;
             }
+
+
+            // 计算 ii=0 score 
+            if(0 == ii)
+            {
+                SCORE sc;
+                sc.last_j = -1;  // 没有上一层的结点 
+                sc.score = mt.match;
+                vec_score[ii][jj] = sc; 
+            }
+            else
+            {
+                int max_jj = 0;
+                SCORE max_sc = vec_score[ii-1][0];
+
+                // 寻找上一层中 所有符合条件的结点中  最大的一个  
+                for(int kk = 1; kk<N; kk++)
+                {
+                    // 上一层中 节点 kk 对应的match
+                    MATCH last_mt = vec_match[ii-1][kk];
+                    SCORE last_sc = vec_score[ii-1][kk];
+                    // 上一层中 结点 kk  累计积分
+                    if( last_mt.end < mt.st && last_sc.score > max_sc.score)
+                    {
+                        max_jj = kk;
+                        max_sc = last_sc;
+
+                    }
+                }
+
+                // 当前结点的值
+                SCORE sc;
+                sc.last_j = max_jj;
+                sc.score = max_sc.score + mt.match;
+                
+                vec_score[ii][jj] = sc; 
+
+            }
+
         }
+
         fprintf(fp_out, "\t%d\t%d\t%.4f\n", mt_ok.st, mt_ok.end, mt_ok.match);
 
+    }
+
+
+    // 测试 vec_score 矩阵 
+    for(int ii=0; ii<M; ii++)
+    {
+        for(int jj=0; jj<N; jj++)
+        {
+
+            fprintf(fp_out, "%d/%.2f ", vec_score[ii][jj].last_j, vec_score[ii][jj].score);
+            if(jj%10 == 9)
+            {
+                fprintf(fp_out,"\n");
+            }
+        }
+        fprintf(fp_out, "\n\n");
+    }
+
+    // 打印出最优路径 
+    int ii = M-1; 
+    int jj= 0;
+
+    // 寻找 最后一行的 最大值 
+    int max_jj = 0;
+    SCORE max_sc = vec_score[ii][0];
+    for(int jj=1; jj<N; jj++)
+    {
+        SCORE sc = vec_score[ii][jj];
+        if(sc.score > max_sc.score)
+        {
+           max_sc = sc;
+           max_jj = jj;
+        }
+    }
+
+    while(ii >= 0)
+    {
+        fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+        MATCH mt = vec_match[ii][max_jj];
+        SCORE sc = vec_score[ii][max_jj];
+        fprintf(fp_out, "%d\t%d\t%.4f\n", mt.st, mt.end, sc.score);
+
+        // 上一层的 jj 
+        max_jj = sc.last_j;
+        ii--;
     }
 
 	
