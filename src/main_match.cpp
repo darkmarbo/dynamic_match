@@ -28,6 +28,23 @@ typedef struct _SCORE{
     double score;
 }SCORE;
 
+// 记录最终的最优路径的结点 
+typedef struct _PATH{
+    int idx_st;  // 对应 N 数组中的 idx 从0开始 
+    int idx_end; // 结束 
+
+    // 对应小语音的 起始 结束时间 
+    double time_st;  
+    double time_end;
+
+    // 路径得分 
+    double score;
+    // 当前匹配得分 
+    double match;
+
+}PATH;
+
+
 vector<Text> vec_lab;
 vector<Text> vec_res;
 
@@ -57,17 +74,25 @@ int main(int argc, char *argv[])
 	FILE* fp_lab = NULL;
 	FILE* fp_res = NULL;
 	FILE* fp_out = NULL;
+	FILE* fp_log = NULL;
+
 
     fp_lab = fopen(argv[1], "r");
     fp_res = fopen(argv[2], "r");
     fp_out = fopen(argv[3], "w");
-    if(!fp_lab || !fp_res || !fp_out)
+
+    string file_log = "match.log";
+    fp_log = fopen(file_log.c_str(), "w");
+
+    if(!fp_lab || !fp_res || !fp_out || !fp_log)
     {
         printf("ERROR:打开文件失败！\n");
         return 0;
     }
 
-    printf("载入label和res文件到vector...");
+    fprintf(stderr, "载入label和res文件到vector...\n");
+    fflush(fp_log);
+
     ret = file2vec(fp_lab, vec_lab);
     ret = file2vec(fp_res, vec_res);
     M = vec_lab.size();
@@ -79,17 +104,17 @@ int main(int argc, char *argv[])
     // 计算 res 中所有数据的wer  
     WER_RES wer_all;
     memset(&wer_all, 0, sizeof(wer_all));
-    printf("开始计算每句话和所有小语音的基础匹配度... \n", M);
+    fprintf(stderr, "开始计算每句话和所有小语音的基础匹配度... \n", M);
 
     // lab的每句话  跟res的每个小句子  对比计算match 保存到矩阵  
     for(int idx=0; idx < M; idx++)
     {
-        printf("当前 %d 个lab \n", idx+1);
+        fprintf(stderr, "当前 %d 个lab \n", idx+1);
         // label 中 每句话 
         string id = vec_lab[idx].id;
         string text_lab = vec_lab[idx].text;
 
-        //fprintf(fp_out, "%s\t%s\n", id.c_str(), text_lab.c_str());
+        //fprintf(fp_log, "%s\t%s\n", id.c_str(), text_lab.c_str());
         // 与 res 中每个小句子 进行匹配 
         for(int ii = 0; ii<N; ii++)
         {
@@ -128,7 +153,7 @@ int main(int argc, char *argv[])
             }
 
             // 测试每个lab句子  与所有小语音对齐 的wer值  
-            //fprintf(fp_out, "\t%d\t%.4f\t%s\n", jj_tmp, wer_tmp, text_tmp.c_str());
+            //fprintf(fp_log, "\t%d\t%.4f\t%s\n", jj_tmp, wer_tmp, text_tmp.c_str());
             MATCH mt;
             mt.st = ii;
             mt.end = jj_tmp;
@@ -143,11 +168,12 @@ int main(int argc, char *argv[])
 
     // 通过 vec_match 计算vec_score 
     //// 测试 vec_match   打印出每句话 单独 对应的最佳匹配点 
-    printf("开始计算动态规划中每个句子的截止得分...");
+    fprintf(fp_log, "开始计算动态规划中每个句子的截止得分...\n");
     for(int ii=0; ii<M; ii++)
     {
-        printf("当前 %d ...\n");
-        fprintf(fp_out, "%s\t%s\n", vec_lab[ii].id.c_str(), vec_lab[ii].text.c_str());
+        fprintf(stderr, "当前 %d ...\n", ii);
+        fprintf(fp_log, "%s\t%s\n", vec_lab[ii].id.c_str(), vec_lab[ii].text.c_str());
+        fflush(fp_log);
         int jj_ok = 0;
         MATCH mt_ok;
         mt_ok.match = -10.0;
@@ -156,7 +182,8 @@ int main(int argc, char *argv[])
         for(int jj=0; jj<N; jj++)
         {
             MATCH mt = vec_match[ii][jj];
-            //fprintf(fp_out, "\t%d\t%d\t%.4f\n", mt.st, mt.end, mt.match);
+            //fprintf(fp_log, "\t%d\t%d\t%.4f\n", mt.st, mt.end, mt.match);
+            //fflush(fp_log);
             if(mt.match > mt_ok.match)
             {
                 jj_ok = jj;
@@ -203,7 +230,8 @@ int main(int argc, char *argv[])
 
         }
 
-        fprintf(fp_out, "\t%d\t%d\t%.4f\n", mt_ok.st, mt_ok.end, mt_ok.match);
+        fprintf(fp_log, "\t%d\t%d\t%.4f\n", mt_ok.st, mt_ok.end, mt_ok.match);
+        fflush(fp_log);
 
     }
 
@@ -214,13 +242,16 @@ int main(int argc, char *argv[])
         for(int jj=0; jj<N; jj++)
         {
 
-            fprintf(fp_out, "%d/%.2f ", vec_score[ii][jj].last_j, vec_score[ii][jj].score);
+            fprintf(fp_log, "%d/%.2f ", vec_score[ii][jj].last_j, vec_score[ii][jj].score);
+            fflush(fp_log);
             if(jj%10 == 9)
             {
-                fprintf(fp_out,"\n");
+                fprintf(fp_log,"\n");
+                fflush(fp_log);
             }
         }
-        fprintf(fp_out, "\n\n");
+        fprintf(fp_log, "\n\n");
+        fflush(fp_log);
     }
 
     // 打印出最优路径 
@@ -240,23 +271,112 @@ int main(int argc, char *argv[])
         }
     }
 
+    // 得到最优路径  并 保存 
+    vector<PATH> vec_path;
     while(ii >= 0)
     {
-        fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+        fprintf(fp_log, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+        fflush(fp_log);
         MATCH mt = vec_match[ii][max_jj];
         SCORE sc = vec_score[ii][max_jj];
-        fprintf(fp_out, "%d\t%d\t%.4f\n", mt.st, mt.end, sc.score);
+        fprintf(fp_log, "\t%d\t%d\t%.4f\n", mt.st, mt.end, sc.score);
+        fflush(fp_log);
+
+        PATH pt;
+        pt.idx_st = mt.st;
+        pt.idx_end = mt.end; 
+
+
+        // 从 vec_res[xx].id 文件名字中 截取出 time_st 和 time_end
+
+        //  dir_wav/000014_44.9029_46.6111.wav
+        string path_wav;  
+        vector<string> vec_tmp;
+
+        // 000014_44.9029_46.6111.wav
+        string wav_name;
+        // 000014
+        string wav_id_st; 
+        string wav_id_end;
+        string str_tmp; 
+
+
+        // 开始的小语音 pt.idx_st
+        path_wav = vec_res[pt.idx_st].id;
+        split(vec_tmp, path_wav, '/');
+        if(vec_tmp.size() <2)
+        {
+            fprintf(fp_log, "lab_res format err:%s", path_wav.c_str());
+            return 0;
+        }
+        wav_name = vec_tmp[1];
+
+        vec_tmp.clear();
+        split(vec_tmp, wav_name, '_');
+        if(vec_tmp.size() < 3)
+        {
+            fprintf(fp_log, "lab_res format err:%s", path_wav.c_str());
+            return 0;
+        }
+        wav_id_st = vec_tmp[0];
+        pt.time_st = atof(vec_tmp[1].c_str());
+
+        // 结束的小语音 pt.idx_end
+        path_wav = vec_res[pt.idx_end].id;
+        vec_tmp.clear();
+        split(vec_tmp, path_wav, '/');
+        if(vec_tmp.size() <2)
+        {
+            fprintf(fp_log, "lab_res format err:%s", path_wav.c_str());
+            return 0;
+        }
+        wav_name = vec_tmp[1];
+        vec_tmp.clear();
+        split(vec_tmp, wav_name, '_');
+        if(vec_tmp.size() < 3)
+        {
+            fprintf(fp_log, "lab_res format err:%s", path_wav.c_str());
+            return 0;
+        }
+        wav_id_end = vec_tmp[0];
+
+        // 46.6111.wav
+        str_tmp = vec_tmp[2];
+        if(str_tmp.substr(str_tmp.size()-4,4).compare(".wav") == 0 || 
+                    str_tmp.substr(str_tmp.size()-4,4).compare(".WAV") == 0)
+        {
+            str_tmp = str_tmp.substr(0,str_tmp.size()-4);
+        }
+        pt.time_end = atof(str_tmp.c_str());
+
+        // 
+        pt.match = mt.match; 
+        pt.score = sc.score;
+
+        vec_path.insert(vec_path.begin(), pt);
 
         // 上一层的 jj 
         max_jj = sc.last_j;
         ii--;
     }
 
+    
+    // 最终路径 
+    for(int ii=0; ii<vec_path.size(); ii++)
+    {
+        PATH pt = vec_path[ii];
+        fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+        fprintf(fp_out, "\t[%d\t%d]\t[%.4f\t%.4f]\t%.2f\t%.2f\n", 
+                    pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
+        fflush(fp_out);
+
+    }
 	
 
 	fclose(fp_lab);
 	fclose(fp_res);
 	fclose(fp_out);
+	fclose(fp_log);
 
 
     
