@@ -15,7 +15,7 @@ using namespace std;
 
 
 
-#define MAX_LEN 5000
+#define MAX_LEN 500
 
 typedef struct _WER_RES{
     int len_lab;
