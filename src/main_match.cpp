@@ -2,6 +2,7 @@
 #include"common.h"
 
 const int ENTRY_BUFF_SIZE = 40960;
+const double MATCH_TH = 0.6;
 
 // vad 切分后的语音文件名:
 // dir_wav/000001_0.123_1.234.wav 
@@ -289,10 +290,41 @@ int main(int argc, char *argv[])
     {
         PATH pt = vec_path[ii];
         fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
-        fprintf(fp_out, "\t[%d\t%d]\t[%.4f\t%.4f]\t%.2f\t%.2f\n", 
+        fprintf(fp_out, "\t%d\t%d\t%.4f\t%.4f\t%.2f\t%.2f\n", 
                     pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
         fflush(fp_out);
 
+    }
+
+    // 最终路径 中  错误句子  
+    fprintf(fp_out, "\n==============================================\n");
+    PATH last_pt;
+    for(int ii=0; ii<vec_path.size(); ii++)
+    {
+        int flag = 0;
+        PATH pt = vec_path[ii];
+        if(0 == ii)
+        {
+            if(pt.match < MATCH_TH)
+            {
+                flag = 1;
+            }
+        }
+        // 跟上一句 不连续 并且 当前匹配阈值<0.6
+        else if(last_pt.idx_end + 1 != pt.idx_st && pt.match < MATCH_TH)
+        {
+            flag =1;
+        }
+
+        last_pt = pt;
+        if(flag == 1)
+        {
+            fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+            fprintf(fp_out, "\t%d\t%d\t%.4f\t%.4f\t%.2f\t%.2f\n", 
+                    pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
+            fflush(fp_out);
+        }
+        
     }
 
 
