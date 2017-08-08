@@ -110,6 +110,13 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    ret = load_map();
+    if(ret < 0)
+    {
+        fprintf(stderr, "load_map failed!\n");
+        return 0;
+    }
+
     fprintf(stderr, "载入label和res文件到vector...\n");
 
     ret = file2vec(fp_lab, vec_lab);

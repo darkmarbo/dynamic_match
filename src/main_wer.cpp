@@ -46,6 +46,13 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    ret = load_map();
+    if(ret < 0)
+    {
+        fprintf(stderr, "load_map failed!\n");
+        return 0;
+    }
+
     ret = file2vec(fp_lab, vec_lab);
     ret = file2vec(fp_res, vec_res);
 
@@ -71,7 +78,7 @@ int main(int argc, char *argv[])
 
         //err_count = lcs_string(text_lab.c_str(), text_res.c_str(), len1, len2);
         WER_RES wer_res;
-        ret = lcs_string(text_lab.c_str(), text_res.c_str(), wer_res);
+        ret = wer(text_lab.c_str(), text_res.c_str(), wer_res);
 	fprintf(fp_out, "len_lab=%d len_res=%d err_ins=%d err_del=%d err_rep=%d wer=%.4f\n",
                     wer_res.len_lab, wer_res.len_res, wer_res.err_ins, wer_res.err_del,
                     wer_res.err_rep, double(wer_res.err_all)/double(wer_res.len_lab));

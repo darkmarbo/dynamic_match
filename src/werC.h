@@ -15,7 +15,7 @@ using namespace std;
 
 
 
-#define MAX_LEN 500
+#define MAX_LEN 5000
 
 typedef struct _WER_RES{
     int len_lab;
@@ -32,6 +32,10 @@ typedef struct _WER_RES{
 
 int ch(const char *st);
 
+int load_map();
+
+string str_pro(const string &str);
+
 int add_wer(WER_RES &wer_all, WER_RES wer_res);
 
 int lcs_string(const char *string1, const char *string2, WER_RES &wer_res);
@@ -42,6 +46,6 @@ int replace(char chString[], const char chOldWord[], const char chNewWord[]);
 
 int convert_to_ArabicNumbers(char *src);
 
-int wer(const char *lab, const char *res, double &match);
+int wer(const char *lab, const char *res, WER_RES &wer_res);
 
 #endif

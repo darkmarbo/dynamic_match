@@ -6,48 +6,99 @@
 #include <cstring>
 #include <stdio.h>
 
+#include"common.h"
 #include"werC.h"
 
 using namespace std;
 
-map<int, int> fr;
-map<int, int> c_conv;
+map<string,string> map_del;
 
+int load_map()
+{
+    int ret = 0;
+    FILE *fp = fopen("wer.conf", "r");
+    if(!fp)
+    {
+        fprintf(stderr, "open wer.conf 失败！");
+        return -1;
+    }
 
-int wer(const char *lab, const char *res, double &match)
+    fprintf(stderr, "load_map wer.conf :\n");
+    char buff[MAX_LEN];
+    UTF8Util::SkipUtf8Bom(fp);
+    while(fgets(buff, MAX_LEN, fp))
+    {
+
+        const char* inbuff = buff;
+        size_t length;
+
+        const char* pbuff = UTF8Util::FindNextInline(inbuff, '\n');
+        if(UTF8Util::IsLineEndingOrFileEnding(*pbuff)){}
+
+        // 获取 inbuff 后面 length 个字 
+        length = static_cast<size_t>(pbuff-inbuff);
+        string key = UTF8Util::FromSubstr(inbuff, length);
+
+        vector<string> vec_tmp;
+        split(vec_tmp, key, '\t');
+        if(vec_tmp.size() < 3)
+        {
+            printf("input line format err:%s\n",key.c_str());
+            ret = -2;
+            continue;
+        }
+
+        fprintf(stderr, "\tchar==%s==\n", vec_tmp[0].c_str());
+        map_del[vec_tmp[0]] = "";
+
+    }
+
+    return ret;
+}
+
+/*
+ * 处理字符串str 去掉内部的空格和标点符号  
+ * 将全角英文转换成半角  数字和阿拉伯数字转换
+ * */
+string str_pro(const string &str)
+{
+
+    string str_new = "";
+    int len = UTF8Util::StrCharLength(str.c_str());
+    for(int ii=1; ii<= len; ii++)
+    {
+        string ch = UTF8Util::GetChar(str, ii);
+        //fprintf(stderr, "ch=%s===\n", ch.c_str());
+        if(map_del.count(ch) == 0)
+        {
+            str_new += ch;
+        }
+    }
+
+    return str_new; 
+}
+
+int wer(const char *lab, const char *res, WER_RES &wer_res)
 {
 	
-    //// 忽略的字
-	//fr[ch("。")]=1;
-	//fr[ch("，")]=1;
+    int ret = 0;
 
-    //// 转换的字 
-	//c_conv[ch("Ｙ")]='y';
-	//c_conv[ch("Ｚ")]='z';
+	//char lab_tmp[MAX_LEN * 2] = {0};
+	//snprintf(lab_tmp, MAX_LEN*2, "%s", lab);
+	//char res_tmp[MAX_LEN * 2] = {0};
+	//snprintf(res_tmp, MAX_LEN*2, "%s", res);
 
-	int len1,len2;
+    string lab_tmp = str_pro(lab); 
+    string res_tmp = str_pro(res); 
+    fprintf(stderr, "lab=%s\tlab_pro=%s\n", lab, lab_tmp.c_str());
 
-	char lab_tmp[MAX_LEN * 2] = {0};
-	snprintf(lab_tmp, MAX_LEN*2, "%s", lab);
-	char res_tmp[MAX_LEN * 2] = {0};
-	snprintf(res_tmp, MAX_LEN*2, "%s", res);
-
-	convert_to_ArabicNumbers(lab_tmp);	
-	convert_to_ArabicNumbers(res_tmp);
+	//convert_to_ArabicNumbers(lab_tmp);	
+	//convert_to_ArabicNumbers(res_tmp);
 	
 	
-	double lcs_r = lcs_string(lab_tmp, res_tmp, len1, len2);	
-
-
-	double len_ave=double(len1+len2)/2.0;
-	match = 1 - lcs_r*double(len1)/(len_ave);
-	if(match<0)
-	{
-		match=0.0;
-	}
-
+	ret = lcs_string(lab_tmp.c_str(), res_tmp.c_str(), wer_res);	
 	
-	return 0;
+	return ret;
 }
 
 int ch(const char *st)
