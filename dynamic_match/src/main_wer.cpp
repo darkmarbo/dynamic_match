@@ -56,6 +56,10 @@ int main(int argc, char *argv[])
     ret = file2vec(fp_lab, vec_lab);
     ret = file2vec(fp_res, vec_res);
 
+    // 统计句准确率   句子总数  wer<0.001的个数
+    int num_all = 0;
+    int num_wer0 = 0;
+
     // 计算 res 中所有数据的wer  
     WER_RES wer_all;
     memset(&wer_all, 0, sizeof(wer_all));
@@ -68,7 +72,7 @@ int main(int argc, char *argv[])
         int idx = find_id(vec_lab, id);
         if(idx < 0)
         {
-            printf("WARNING:此id=%s 不在 %s 中", id.c_str(), argv[1]);
+            printf("WARNING:此id=%s 不在 %s 中\n", id.c_str(), argv[1]);
             continue;
         }
         string text_lab = vec_lab[idx].text;
@@ -84,10 +88,17 @@ int main(int argc, char *argv[])
                     wer_res.err_rep, double(wer_res.err_all)/double(wer_res.len_lab));
 
         add_wer(wer_all, wer_res);
+        num_all ++;
+        if(wer_res.err_all == 0)
+        {
+            num_wer0 ++;
+        }
 
     }
-    fprintf(fp_out, "===========================================================\n");
-	fprintf(fp_out, "len_lab=%d len_res=%d err_ins=%d err_del=%d err_rep=%d wer=%.4f\n",
+    fprintf(fp_out, "\n===========================================================\n");
+    fprintf(fp_out, "句子总数=%d\t句子正确数=%d\t句准确率=%.4f\n", num_all, num_wer0,
+                double(num_wer0)/double(num_all));
+	fprintf(fp_out, "答案总字数=%d 识别总字数=%d 插入错误=%d 删除错误=%d 替换错误=%d 字错误率(wer)=%.4f\n",
             wer_all.len_lab, wer_all.len_res, wer_all.err_ins, wer_all.err_del,
             wer_all.err_rep, double(wer_all.err_all)/double(wer_all.len_lab));
 
