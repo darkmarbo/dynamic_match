@@ -1,7 +1,9 @@
 
 
 
-
+112 上配置的 真正使用流程：
+    当前目录下的 run.sh + run_dynamic_match.remote 
+    其中 vad 和 match 模块都需要源码重新在112上编译的
 
 
 3. dynamic_match

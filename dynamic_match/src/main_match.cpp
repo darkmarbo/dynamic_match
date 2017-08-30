@@ -296,7 +296,8 @@ int main(int argc, char *argv[])
     for(int ii=0; ii<vec_path.size(); ii++)
     {
         PATH pt = vec_path[ii];
-        fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+        //fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+        fprintf(fp_out, "%s\t%s\n", vec_lab[ii].id.c_str(), vec_lab[ii].text.c_str());
         fprintf(fp_out, "\t%d\t%d\t%.4f\t%.4f\t%.2f\t%.2f\n", 
                     pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
         fflush(fp_out);
@@ -326,7 +327,8 @@ int main(int argc, char *argv[])
         last_pt = pt;
         if(flag == 1)
         {
-            fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+            //fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
+            fprintf(fp_out, "%s\t%s\n", vec_lab[ii].id.c_str(), vec_lab[ii].text.c_str());
             fprintf(fp_out, "\t%d\t%d\t%.4f\t%.4f\t%.2f\t%.2f\n", 
                     pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
             fflush(fp_out);
