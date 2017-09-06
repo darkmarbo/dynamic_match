@@ -6,8 +6,8 @@
 ## nohup ./run.sh  2    dir_input    &
 
 if(($#<2));then
-    echo "usage:    $0  1/2  dir_input "
-    echo "example 语音文本初始对齐:  $0  1 dir_input "
+    echo "usage:    $0  1/2  dir_input 1(如果是英文)"
+    echo "example 语音文本初始对齐:  $0  1 dir_input  1"
     echo "example 人工矫正重新切分:  $0  2 dir_input "
     exit 0;
 fi
@@ -27,6 +27,7 @@ done
 dir_pwd=` pwd `
 flag=$1
 dir_in=$2
+eng_flag=$3
 dir_run=run_dynamic_match
 
 ### 1. 判断输入文件是否存在 
@@ -63,7 +64,7 @@ if [ x"$flag" == x"1" ];then
 		cp -r ${wav}  ${txt}  ${dir_run}
 	
 		cd ${dir_run}   
-			./run_remote.sh  1  ${name_txt}  ${name_wav}  
+			./run_remote.sh  1  ${name_txt}  ${name_wav}  ${eng_flag} 
 			num_match=`wc -l ${name_wav}_seg.match | awk '{print $1}'`
 			if [ ${num_match} -gt 2 ];then
 			   mv ${name_wav}_seg.match  ../ 
@@ -122,6 +123,7 @@ elif [ x"$flag" == x"2" ];then
     
 fi
 
-rm -rf lock && exit 0;
-
+rm -rf lock 
+echo "所有语音处理完毕!"
+exit 0
 

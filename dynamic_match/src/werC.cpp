@@ -12,6 +12,7 @@
 using namespace std;
 
 map<string,string> map_del;
+map<string,string> map_rep;
 
 int load_map()
 {
@@ -48,8 +49,23 @@ int load_map()
             continue;
         }
 
-        fprintf(stderr, "\tchar==%s==\n", vec_tmp[0].c_str());
-        map_del[vec_tmp[0]] = "";
+        string word = vec_tmp[0];
+        int flag = atoi(vec_tmp[1].c_str());
+        string word_new = vec_tmp[2];
+        if(flag == 0)
+        {
+            map_del[word] = "";
+        }
+        else if(flag == 1)
+        {
+            map_rep[word] = word_new;
+
+        }
+        else
+        {
+            fprintf(stderr, "\tchar==%s==\n", vec_tmp[0].c_str());
+
+        }
 
     }
 
@@ -71,6 +87,11 @@ string str_pro(const string &str)
         //fprintf(stderr, "ch=%s===\n", ch.c_str());
         if(map_del.count(ch) == 0)
         {
+            // 替换 
+            if(map_rep.count(ch) == 1)
+            {
+                ch = map_rep[ch];
+            }
             str_new += ch;
         }
     }
@@ -139,6 +160,10 @@ int lcs_string(const char *str1, const char *str2, WER_RES &wer_res)
 
     std::string fc1 = str1;
     std::string fc2 = str2;
+
+
+    fc1 = str_pro(fc1); 
+    fc2 = str_pro(fc2); 
     // 两个字符串  字 的个数 
 	int cv1 = UTF8Util::StrCharLength(fc1.c_str());
 	int cv2 = UTF8Util::StrCharLength(fc2.c_str());
@@ -375,6 +400,9 @@ double lcs_string(const char *str1, const char *str2, int &len1, int &len2)
 
     std::string fc1 = str1;
     std::string fc2 = str2;
+
+    fc1 = str_pro(fc1); 
+    fc2 = str_pro(fc2); 
     // 两个字符串  字 的个数 
 	int cv1 = UTF8Util::StrCharLength(fc1.c_str());
 	int cv2 = UTF8Util::StrCharLength(fc2.c_str());

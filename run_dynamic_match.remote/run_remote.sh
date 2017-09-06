@@ -4,8 +4,8 @@
 ## nohup ./run_vad.sh  2  duianyoushenme_sox.wav_seg.match  test/duianyoushenme_sox.wav    &
 
 if(($#<3));then
-    echo "usage:    $0  1/2 input_text   input_wav "
-    echo "example 语音文本初始对齐:  $0  1 input_text   input_wav "
+    echo "usage:    $0  1/2 input_text   input_wav 1(如果是英文)"
+    echo "example 语音文本初始对齐:  $0  1 input_text   input_wav  1"
     echo "example 人工矫正重新切分:  $0  2 input_text   input_wav "
     exit 0;
 fi
@@ -26,6 +26,7 @@ dir_pwd=` pwd `
 flag=$1
 file_lab=$2
 file_wav=$3
+eng_flag=$4
 
 ### 获取wav的名字 
 name_wav=`basename ${file_wav}`
@@ -89,11 +90,22 @@ if [ x"$flag" == x"1" ];then
 	data_wav_remote=${dir_seg}_${dd}
 	scp  -r  ${dir_seg}  ${host}:${dir_asr}/${data_wav_remote} 
 
-	ssh ${host}  "
-		cd ${dir_asr};
-    	    	./run_asr.sh  ${data_wav_remote} 
-		
-	" 
+	### 识别 区分中文和英文 
+	if [ x"$eng_flag" == x"1" ];then
+		ssh ${host}  "
+			cd ${dir_asr};
+    		    	./run_asr_eng.sh  ${data_wav_remote} 
+			
+		" 
+	else
+		ssh ${host}  "
+			cd ${dir_asr};
+    		    	./run_asr.sh  ${data_wav_remote} 
+			
+		" 
+
+	fi
+
 
     	scp -r  ${host}:${dir_asr}/${res_asr}   ${dir_pwd}
     	if [ ! -f ${res_asr} ];then

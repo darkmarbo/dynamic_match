@@ -1,5 +1,9 @@
 
 
+识别引擎:
+    host=root@10.10.10.158
+    dir_asr=/home/szm/cd/kaldi-master/test
+
 
 112 上配置的 真正使用流程：
     当前目录下的 run.sh + run_dynamic_match.remote 
