@@ -42,7 +42,7 @@ file_res=${dir_seg}.res
 file_match=${dir_seg}.match
 
 
-### 1. 判断输入文件是否存在 
+### 	1. 判断输入文件是否存在 
 if [ ! -f ${file_lab} ];then
     echo "ERROR: input text=${file_lab} not exist!"
     rm -rf lock;
@@ -55,9 +55,10 @@ if [ ! -f ${file_wav} ];then
 fi
 
 dos2unix  ${file_lab}
+###	2.  sox 转换成 16k   16bit 
 sox ${file_wav}  temp.wav  && mv temp.wav ${file_wav} 
 
-### 2. 检测文本是否是  id tab content 格式
+### 	3. 检测文本是否是  id tab content 格式
 num_tab=`awk -F"\t" ' BEGIN{num=0} {if(NF>1){num=num+1}} END{print num} ' ${file_lab}`
 num_all=`wc -l ${file_lab} | awk '{print $1}'`
 if(( ${num_tab} < ${num_all}/2 ));then
@@ -74,27 +75,19 @@ fi
 
 
 if [ x"$flag" == x"1" ];then
-    	####   1. 初始切分 
-    	####sox duianyoushenme.wav -t wav duianyoushenme_sox.wav
+	###   16khz   16bit 
+	sox ${file_wav}  -r 16000 -b 16 temp.wav  && mv temp.wav ${file_wav} 
     	
+    	####   1. 初始切分 
     	echo "开始初始切分wav语音..."
     	rm -rf ${dir_seg}  && mkdir -p ${dir_seg}
     	./vad   1   ${file_wav}  ${dir_seg}
     	
-    	#     2.  sox 转换成 16k 
-    	rm -rf ${dir_seg_16k}   &&   mkdir -p   ${dir_seg_16k}
-    	ls -1 ${dir_seg} | while read line
-    	do
-    	    sox ${dir_seg}/${line}  -r 16000 ${dir_seg_16k}/${line}
-    	
-    	done
-    
-    
-    	###    3.   asr 识别 
+    	###    2.   asr 识别 
 	###   上传目录到目标服务器 
 	dd=`date +%H%M%S`
-	data_wav_remote=${dir_seg_16k}_${dd}
-	scp  -r  ${dir_seg_16k}  ${host}:${dir_asr}/${data_wav_remote} 
+	data_wav_remote=${dir_seg}_${dd}
+	scp  -r  ${dir_seg}  ${host}:${dir_asr}/${data_wav_remote} 
 
 	ssh ${host}  "
 		cd ${dir_asr};
@@ -119,7 +112,9 @@ elif [ x"$flag" == x"2" ];then
     	######  6.   矫正结果time  重新切分  
     	######       将原始语音 wav  按照duian.out的时间点  切分到目录 dir_out 中 
     	rm -rf ${dir_reseg}  && mkdir -p ${dir_reseg}
-    	./vad   2   ${file_wav}  ${file_lab}  ${dir_reseg}
+    	###./vad   2   ${file_wav}  ${file_lab}  ${dir_reseg}
+	python format_match.py  ${file_lab}  ${file_lab}.format  
+	./run_split.sh  ${file_wav}  ${file_lab}.format   ${dir_reseg}
     
 fi
 
