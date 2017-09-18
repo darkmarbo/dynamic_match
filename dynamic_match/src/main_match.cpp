@@ -79,6 +79,8 @@ int get_path(const vector<Text> &vec_lab, const vector<Text> &vec_res,
 int find_id(const vector<Text> &vec, string id);
 
 
+int s2ms(double s, string &ms);
+
 /*
  * 输入两个文件 lab和res  计算对应句子的wer 
  * */
@@ -298,8 +300,14 @@ int main(int argc, char *argv[])
         PATH pt = vec_path[ii];
         //fprintf(fp_out, "%d\t%s\n", ii, vec_lab[ii].text.c_str());
         fprintf(fp_out, "%s\t%s\n", vec_lab[ii].id.c_str(), vec_lab[ii].text.c_str());
+        string ms_st;
+        string ms_end;
+        s2ms(pt.time_st, ms_st);
+        s2ms(pt.time_end, ms_end);
         fprintf(fp_out, "\t%d\t%d\t%.4f\t%.4f\t%.2f\t%.2f\n", 
-                    pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
+                   pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
+        //fprintf(fp_out, "\t%d\t%d\t%s\t%s\t%.2f\t%.2f\n", 
+         //           pt.idx_st, pt.idx_end, ms_st.c_str(), ms_end.c_str(), pt.match, pt.score);
         fflush(fp_out);
 
     }
@@ -531,5 +539,33 @@ int find_id(const vector<Text> &vec, string id)
     }
     return -1;
 }
+
+
+/*
+ * s=61.123
+ * ms="1:1.123"
+ * */
+int s2ms(double s, string &ms)
+{
+    int m = int(s)/60;  // 1
+    char tmp[20] ={0};
+    snprintf(tmp, 20, "%d:%.4f", m, s-60*m);
+    //printf("ttt=%s\n",tmp);
+    ms = tmp;
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
