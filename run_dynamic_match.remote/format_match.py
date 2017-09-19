@@ -23,6 +23,16 @@ for line in fp_in:
 	else:
 		st=vec[3];
 		end=vec[4];
+		vec_st=st.split(":");	
+		if len(vec_st)>1:
+			num = int(vec_st[0]) * 60 + float(vec_st[1]);
+			st="%.4f"%(num);
+
+		vec_end=end.split(":");	
+		if len(vec_end)>1:
+			num = int(vec_end[0]) * 60 + float(vec_end[1]);
+			end="%.4f"%(num);
+
 		fp_out.write("%s\t%s\n"%(st, end));
 
 fp_in.close();
