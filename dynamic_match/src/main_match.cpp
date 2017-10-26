@@ -319,6 +319,8 @@ int main(int argc, char *argv[])
     {
         int flag = 0;
         PATH pt = vec_path[ii];
+
+        // 第一句 
         if(0 == ii)
         {
             if(pt.match < MATCH_TH)
@@ -326,8 +328,8 @@ int main(int argc, char *argv[])
                 flag = 1;
             }
         }
-        // 跟上一句 不连续 并且 当前匹配阈值<0.6
-        else if(last_pt.idx_end + 1 != pt.idx_st && pt.match < MATCH_TH)
+        //  不是第一句 跟上一句 不连续 或者 当前匹配阈值<0.6
+        else if(last_pt.idx_end + 1 != pt.idx_st || pt.match < MATCH_TH)
         {
             flag =1;
         }
@@ -340,15 +342,15 @@ int main(int argc, char *argv[])
         	s2ms(pt.time_st, ms_st);
         	s2ms(pt.time_end, ms_end);
 
-            	fprintf(fp_out, "%s\t%s\n", vec_lab[ii].id.c_str(), vec_lab[ii].text.c_str());
+            fprintf(fp_out, "%s\t%s\n", vec_lab[ii].id.c_str(), vec_lab[ii].text.c_str());
 
         	fprintf(fp_out, "\t%d\t%d\t%s\t%s\t%.2f\t%.2f\n", 
                     pt.idx_st, pt.idx_end, ms_st.c_str(), ms_end.c_str(), pt.match, pt.score);
 
 
-            	//fprintf(fp_out, "\t%d\t%d\t%.4f\t%.4f\t%.2f\t%.2f\n", 
-            	 //       pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
-            	fflush(fp_out);
+            //fprintf(fp_out, "\t%d\t%d\t%.4f\t%.4f\t%.2f\t%.2f\n", 
+            //       pt.idx_st, pt.idx_end, pt.time_st, pt.time_end, pt.match, pt.score);
+            fflush(fp_out);
         }
         
     }
