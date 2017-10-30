@@ -57,7 +57,7 @@ fi
 
 dos2unix  ${file_lab}
 ###	2.  sox 转换成 16k   16bit 
-sox ${file_wav}  temp.wav  && mv temp.wav ${file_wav} 
+##sox ${file_wav}  temp.wav  && mv temp.wav ${file_wav} 
 
 ### 	3. 检测文本是否是  id tab content 格式
 num_tab=`awk -F"\t" ' BEGIN{num=0} {if(NF>1){num=num+1}} END{print num} ' ${file_lab}`
@@ -77,6 +77,7 @@ fi
 
 if [ x"$flag" == x"1" ];then
 	###   16khz   16bit 
+	sox ${file_wav}  temp.wav  && mv temp.wav ${file_wav} 
 	sox ${file_wav}  -r 16000 -b 16 temp.wav  && mv temp.wav ${file_wav} 
     	
     	####   1. 初始切分 
@@ -125,7 +126,9 @@ elif [ x"$flag" == x"2" ];then
     	######       将原始语音 wav  按照duian.out的时间点  切分到目录 dir_out 中 
     	rm -rf ${dir_reseg}  && mkdir -p ${dir_reseg}
     	###./vad   2   ${file_wav}  ${file_lab}  ${dir_reseg}
+	echo "python format_match.py file_lab file_lab.format "
 	python format_match.py  ${file_lab}  ${file_lab}.format  
+	echo " run_split  file_wav  file_lab.format  out_dir "
 	./run_split.sh  ${file_wav}  ${file_lab}.format   ${dir_reseg}
     
 fi
